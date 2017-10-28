@@ -29,13 +29,16 @@ todoApp.controller('dashBoardController', function($scope, $rootScope, $http,
 		}).success(function(data) {
 			$scope.flagError=false;
 			$scope.flagSuccess=true;
-			$scope.message="Record Saved Successfully in ";
+			if(data=="555555"){
+				$scope.message="File already Exist ";
+			}else{
+			$scope.message="Record Saved Successfully in "+ data +" second";
 			$scope.totalTime=data;
 			fileUpload.getFileData($scope,$rootScope); 
-			
+			}
 
-		}).error(function() {
-			console.log('error');
+		}).error(function(status,data) {
+			console.log('error' + status);
 		});
 		}
 	}

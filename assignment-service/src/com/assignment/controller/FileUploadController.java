@@ -63,8 +63,8 @@ public class FileUploadController<E extends Serializable> {
 		String regx = "^[0-3]?[1-9]/[0-3]?[1-9]/(?:[0-9]{2})?[0-9]{2} \\d{1,2}:\\d{1,2}:\\d{1,2}$";
 		Pattern patt = Pattern.compile(regx);
 		
-		// if(!service.checkExistFile(file.getOriginalFilename()))
-		// {
+		  if(!fileUploadService.checkExistFiel(file.getOriginalFilename()))
+		  {
 		try {
 
 
@@ -177,9 +177,10 @@ public class FileUploadController<E extends Serializable> {
 			logger.info(e.getMessage());
 			return new ResponseEntity<String>(e.getMessage(), HttpStatus.NOT_FOUND);
 		}
-		// }
 		return new ResponseEntity<String>(String.valueOf(TimeUnit.MILLISECONDS.toSeconds(TotalTime)), HttpStatus.OK);
-
+		 }else{
+		return new ResponseEntity<String>(String.valueOf(555555), HttpStatus.OK);
+		 }
 	}
 	
 	@RequestMapping(value = "/getallrecord", method = RequestMethod.GET)
