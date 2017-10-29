@@ -70,9 +70,11 @@ public class FileUploadController<E extends Serializable> {
 
 			@SuppressWarnings("resource")
 			List<String[]> myEntries = new CSVReader(new InputStreamReader(file.getInputStream())).readAll();
-			myEntries.remove(0);
+			myEntries.remove(0);	
+			if(myEntries!=null && myEntries.size()>0){
+				 	
+				
 			Deal dto = null;
-
 			for (String[] p : myEntries) {
 				boolean b = true;
 				dto = new Deal();
@@ -171,106 +173,102 @@ public class FileUploadController<E extends Serializable> {
 			long EndTime = System.currentTimeMillis();
 			TotalTime = EndTime - startTime;
 			System.out.println(TotalTime);
+			
+			}else{
+				return new ResponseEntity<String>(String.valueOf(666666), HttpStatus.OK);
+			}
 
 		} catch (Exception e) {
 			e.printStackTrace();
 			logger.info(e.getMessage());
 			return new ResponseEntity<String>(e.getMessage(), HttpStatus.NOT_FOUND);
 		}
+		
+		
 		return new ResponseEntity<String>(String.valueOf(TimeUnit.MILLISECONDS.toSeconds(TotalTime)), HttpStatus.OK);
 		 }else{
 		return new ResponseEntity<String>(String.valueOf(555555), HttpStatus.OK);
 		 }
 	}
-	
+
 	@RequestMapping(value = "/getallrecord", method = RequestMethod.GET)
-	public @ResponseBody ResponseEntity<List<Deal_DTO>> getAllRecord()  {
-		
-		List<Map<String, Object>> valid=new ArrayList<>();
-		List<Map<String, Object>> invalid=new ArrayList<>();
-		List<Deal_DTO> returnList=new ArrayList<>();
-		List<DealFile> dealFiles=new ArrayList<>();
-		Map<String,String>  checkMap=new HashMap<>();
-		
+	public @ResponseBody ResponseEntity<List<Deal_DTO>> getAllRecord() {
+
+		List<Map<String, Object>> valid = new ArrayList<>();
+		List<Map<String, Object>> invalid = new ArrayList<>();
+		List<Deal_DTO> returnList = new ArrayList<>();
+		List<DealFile> dealFiles = new ArrayList<>();
+		Map<String, String> checkMap = new HashMap<>();
+
 		try {
-			valid=fileUploadService.getAllRecords("valid_deal");
-			invalid=fileUploadService.getAllRecords("invalid_deal");
-			checkMap=fileUploadService.dealFiles();
+			valid = fileUploadService.getAllRecords("valid_deal");
+			invalid = fileUploadService.getAllRecords("invalid_deal");
+			checkMap = fileUploadService.dealFiles();
 			valid.addAll(invalid);
-			
-			
-			Deal_DTO dto=null;
-			 for(Map map:valid ){
-				 dto =new Deal_DTO();
-				   
-				   String fileName=checkMap.get(map.get("file_id"));
-					 dto.setFileName(fileName);
-					 dto.setDeal_id(map.get("deal_id").toString());
-					 dto.setFrom_currency_iso_code(map.get("from_currency_iso_code").toString());
-					 dto.setTo_currency_iso_code(map.get("from_currency_iso_code").toString());
-					 dto.setTime_stamp(map.get("time_stamp").toString());
-					 dto.setAmount_ordering_currency(map.get("amout_ordering_currency").toString());
-					 returnList.add(dto);
-			 }
-			
-			 
-			 
-			
-			
+
+			Deal_DTO dto = null;
+			for (Map map : valid) {
+				dto = new Deal_DTO();
+
+				String fileName = checkMap.get(map.get("file_id"));
+				dto.setFileName(fileName);
+				dto.setDeal_id(map.get("deal_id").toString());
+				dto.setFrom_currency_iso_code(map.get("from_currency_iso_code").toString());
+				dto.setTo_currency_iso_code(map.get("from_currency_iso_code").toString());
+				dto.setTime_stamp(map.get("time_stamp").toString());
+				dto.setAmount_ordering_currency(map.get("amout_ordering_currency").toString());
+				returnList.add(dto);
+			}
+
 		} catch (Exception e) {
 			e.printStackTrace();
-			 logger.info(e.getMessage());
-			 return new ResponseEntity<List<Deal_DTO>>(HttpStatus.NOT_FOUND);
+			logger.info(e.getMessage());
+			return new ResponseEntity<List<Deal_DTO>>(HttpStatus.NOT_FOUND);
 		}
-		
-		return new ResponseEntity<List<Deal_DTO>>(returnList,HttpStatus.OK);
-		
+
+		return new ResponseEntity<List<Deal_DTO>>(returnList, HttpStatus.OK);
+
 	}
-	
-	
+
 	@RequestMapping(value = "/getallrecordcount", method = RequestMethod.GET)
-	public @ResponseBody ResponseEntity<TotalCount> getAllRecordCount()  {
-		
-		TotalCount returnDto =new TotalCount();
+	public @ResponseBody ResponseEntity<TotalCount> getAllRecordCount() {
+
+		TotalCount returnDto = new TotalCount();
 		try {
-			int valid=fileUploadService.validCount();
-			int invalid=fileUploadService.invalidCount();
-			
+			int valid = fileUploadService.validCount();
+			int invalid = fileUploadService.invalidCount();
+
 			ExecutorService executorService = Executors.newFixedThreadPool(40);
 
 			Set<Callable<String>> callables = new HashSet<Callable<String>>();
 
 			callables.add(new Callable<String>() {
-				
-				
-			    public String call() throws Exception {
-			    	
-			    	returnDto.setValidCount(valid);
-			        return "task1";
-			    }
+
+				public String call() throws Exception {
+
+					returnDto.setValidCount(valid);
+					return "task1";
+				}
 			});
 			callables.add(new Callable<String>() {
-			    public String call() throws Exception {
-			    	returnDto.setInvalidCount(invalid);
-					 
-			        return "task2";
-			    }
+				public String call() throws Exception {
+					returnDto.setInvalidCount(invalid);
+
+					return "task2";
+				}
 			});
-			 
-			 
-			 
+
 			executorService.invokeAll(callables);
 			executorService.shutdown();
-			
-			returnDto.setTotalCount(valid+invalid);
+
+			returnDto.setTotalCount(valid + invalid);
 		} catch (Exception e) {
-			 logger.info(e.getMessage());
-			 return new ResponseEntity<TotalCount>(HttpStatus.NOT_FOUND);
+			logger.info(e.getMessage());
+			return new ResponseEntity<TotalCount>(HttpStatus.NOT_FOUND);
 		}
-		
-		return new ResponseEntity<TotalCount>(returnDto,HttpStatus.OK);
-		
+
+		return new ResponseEntity<TotalCount>(returnDto, HttpStatus.OK);
+
 	}
 
- 
 }

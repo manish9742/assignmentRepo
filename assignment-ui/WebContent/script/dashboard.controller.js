@@ -31,7 +31,11 @@ todoApp.controller('dashBoardController', function($scope, $rootScope, $http,
 			$scope.flagSuccess=true;
 			if(data=="555555"){
 				$scope.message="File already Exist ";
-			}else{
+			}
+			else if(data="666666"){
+				$scope.message="Please enter valid file";
+			}
+			else{
 			$scope.message="Record Saved Successfully in "+ data +" second";
 			$scope.totalTime=data;
 			fileUpload.getFileData($scope,$rootScope); 

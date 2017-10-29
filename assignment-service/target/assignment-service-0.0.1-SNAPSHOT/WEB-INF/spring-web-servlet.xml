@@ -12,8 +12,7 @@
 	http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd		 
 	http://www.springframework.org/schema/util  http://www.springframework.org/schema/util/spring-util-4.0.xsd
 	 http://www.springframework.org/schema/tx 
-	  http://www.springframework.org/schema/tx/spring-tx.xsd
-	http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task.xsd">
+	  http://www.springframework.org/schema/tx/spring-tx.xsd">
 
 
 
@@ -30,7 +29,7 @@
 
 	<bean id="mongoTemplate" class="org.springframework.data.mongodb.core.MongoTemplate">
 		<constructor-arg name="mongo" ref="mongo" />
-		<constructor-arg name="databaseName" value="nature" />
+		<constructor-arg name="databaseName" value="demoFile0" />
 	</bean>
 
 	<!-- Factory bean that creates the Mongo instance -->
@@ -89,9 +88,8 @@
 		<property name="hibernateProperties">
 			<props>
 				<prop key="hibernate.dialect">org.hibernate.dialect.MySQLDialect</prop>
-				<prop key="hibernate.show_sql">true</prop>
 				<prop key="hibernate.jdbc.batch_size">30</prop>
-				 <prop key="hibernate.current_session_context_class">thread</prop>
+				
 			</props>
 		</property>
 	</bean>
