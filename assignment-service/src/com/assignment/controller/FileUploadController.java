@@ -12,7 +12,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiConsumer;
 import java.util.regex.Pattern;
 
 import org.jboss.logging.Logger;
@@ -59,136 +58,131 @@ public class FileUploadController<E extends Serializable> {
 		List<String> cumulavtivCountList = new ArrayList<>();
 		long timestamp = System.currentTimeMillis();
 		long TotalTime = 0;
-		
+
 		String regx = "^[0-3]?[1-9]/[0-3]?[1-9]/(?:[0-9]{2})?[0-9]{2} \\d{1,2}:\\d{1,2}:\\d{1,2}$";
 		Pattern patt = Pattern.compile(regx);
-		
-		  if(!fileUploadService.checkExistFiel(file.getOriginalFilename()))
-		  {
-		try {
 
+		if (!fileUploadService.checkExistFiel(file.getOriginalFilename())) {
+			try {
 
-			@SuppressWarnings("resource")
-			List<String[]> myEntries = new CSVReader(new InputStreamReader(file.getInputStream())).readAll();
-			myEntries.remove(0);	
-			if(myEntries!=null && myEntries.size()>0){
-				 	
-				
-			Deal dto = null;
-			for (String[] p : myEntries) {
-				boolean b = true;
-				dto = new Deal();
-				try {
+				@SuppressWarnings("resource")
+				List<String[]> myEntries = new CSVReader(new InputStreamReader(file.getInputStream())).readAll();
+				myEntries.remove(0);
+				/*if (myEntries != null && myEntries.size() > 0) {*/
 
-					if (p[0] != null && p[0].trim().length() > 0) {
-						dto.setDeal_id(p[0]);
-					} else {
-						b = false;
-						dto.setDeal_id(p[0]);
+					Deal dto = null;
+					for (String[] p : myEntries) {
+						boolean b = true;
+						dto = new Deal();
+						try {
+
+							if (p[0] != null && p[0].trim().length() > 0) {
+								dto.setDeal_id(p[0]);
+							} else {
+								b = false;
+								dto.setDeal_id(p[0]);
+							}
+							if (p[1] != null && p[1].trim().length() > 0) {
+								dto.setFrom_currency_iso_code(p[1]);
+								cumulavtivCountList.add(p[1]);
+							} else {
+								b = false;
+								dto.setFrom_currency_iso_code(p[1]);
+							}
+
+							if (p[2] != null && p[2].trim().length() > 0) {
+								dto.setTo_currency_iso_code(p[2]);
+							} else {
+								b = false;
+								dto.setTo_currency_iso_code(p[2]);
+							}
+							if ((p[3] != null && p[3].trim().length() > 0) && patt.matcher(p[3].trim()).find()) {
+								dto.setTime_stamp(p[3]);
+							} else {
+								b = false;
+								dto.setTime_stamp(p[3].length() == 0 ? "''" : p[3]);
+							}
+							if (p[4] != null && p[4].trim().length() > 0) { //
+								dto.setAmount_ordering_currency(p[4]);
+							} else {
+								b = false;
+								dto.setAmount_ordering_currency(p[4].trim().length() == 0 ? "''" : p[4]);
+							}
+
+							if (b) {
+								dto.setfile_id(String.valueOf(timestamp));
+								insertList.add(dto);
+							} else {
+								dto.setfile_id(String.valueOf(timestamp));
+								invalid.add(dto);
+							}
+
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
+
 					}
-					if (p[1] != null && p[1].trim().length() > 0) {
-						dto.setFrom_currency_iso_code(p[1]);
-						cumulavtivCountList.add(p[1]);
-					} else {
-						b = false;
-						dto.setFrom_currency_iso_code(p[1]);
-					}
 
-					if (p[2] != null && p[2].trim().length() > 0) {
-						dto.setTo_currency_iso_code(p[2]);
-					} else {
-						b = false;
-						dto.setTo_currency_iso_code(p[2]);
-					}
-					if ((p[3] != null && p[3].trim().length() > 0) && patt.matcher(p[3].trim()).find()) {
-						dto.setTime_stamp(p[3]);
-					} else {
-						b = false;
-						dto.setTime_stamp(p[3].length()==0 ? "''" : p[3]);
-					}
-					if (p[4] != null && p[4].trim().length() > 0) { //
-						dto.setAmount_ordering_currency(p[4]);
-					} else {
-						b = false;
-						dto.setAmount_ordering_currency(p[4].trim().length()==0 ? "''" :p[4]);
-					}
+					ExecutorService executorService = Executors.newFixedThreadPool(30);
 
-					if (b) {
-						dto.setfile_id(String.valueOf(timestamp));
-						insertList.add(dto);
-					} else {
-						dto.setfile_id(String.valueOf(timestamp));
-						invalid.add(dto);
-					}
+					Set<Callable<String>> callables = new HashSet<Callable<String>>();
 
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
+					callables.add(new Callable<String>() {
 
+						public String call() throws Exception {
+
+							if (insertList != null && insertList.size() > 0) {
+								fileUploadService.InsertFileData("VALID_DEAL", insertList);
+							}
+							return "VALID_DEAL";
+						}
+					});
+					callables.add(new Callable<String>() {
+						public String call() throws Exception {
+
+							if (invalid != null && invalid.size() > 0) {
+								fileUploadService.InsertFileData("INVALID_DEAL", invalid);
+							}
+							return "INVALID_DEAL";
+						}
+					});
+					callables.add(new Callable<String>() {
+						public String call() throws Exception {
+							DealFile modal = new DealFile(String.valueOf(timestamp), file.getOriginalFilename());
+							fileUploadService.insertFileDetails(modal);
+							return "SAVE_FILE";
+						}
+					});
+					callables.add(new Callable<String>() {
+						public String call() throws Exception {
+							if (cumulavtivCountList != null && cumulavtivCountList.size() > 0) {
+								fileUploadService.insertAccumulativeCount(cumulavtivCountList);
+							}
+							return "SAVE_COUNT";
+						}
+					});
+					executorService.invokeAll(callables);
+					executorService.shutdown();
+
+					long EndTime = System.currentTimeMillis();
+					TotalTime = EndTime - startTime;
+					System.out.println(TotalTime);
+
+				/*} /*else {
+					return new ResponseEntity<String>(String.valueOf(666666), HttpStatus.OK);
+				}*/
+
+			} catch (Exception e) {
+				e.printStackTrace();
+				logger.info(e.getMessage());
+				return new ResponseEntity<String>(e.getMessage(), HttpStatus.NOT_FOUND);
 			}
-			
-			
-			ExecutorService executorService = Executors.newFixedThreadPool(30);
 
-			Set<Callable<String>> callables = new HashSet<Callable<String>>();
-
-			callables.add(new Callable<String>() {
-				
-				
-			    public String call() throws Exception {
-			    	
-			    	if (insertList != null && insertList.size() > 0) {
-						fileUploadService.InsertFileData("VALID_DEAL", insertList);
-					}
-			        return "VALID_DEAL";
-			    }
-			});
-			callables.add(new Callable<String>() {
-			    public String call() throws Exception {
-
-					 if (invalid != null && invalid.size() > 0) {
-						 fileUploadService.InsertFileData("INVALID_DEAL", invalid);
-					}
-			        return "INVALID_DEAL";
-			    }
-			});
-			callables.add(new Callable<String>() {
-			    public String call() throws Exception {
-			    	DealFile modal = new DealFile(String.valueOf(timestamp), file.getOriginalFilename());
-			    	fileUploadService.insertFileDetails(modal);
-			        return "SAVE_FILE";
-			    }
-			});
-			callables.add(new Callable<String>() {
-			    public String call() throws Exception {
-			    	if (cumulavtivCountList != null && cumulavtivCountList.size() > 0) {
-			    	fileUploadService.insertAccumulativeCount(cumulavtivCountList);
-			    	}
-			        return "SAVE_COUNT";
-			    }
-			});
-			executorService.invokeAll(callables);
-			executorService.shutdown();
- 
-			long EndTime = System.currentTimeMillis();
-			TotalTime = EndTime - startTime;
-			System.out.println(TotalTime);
-			
-			}else{
-				return new ResponseEntity<String>(String.valueOf(666666), HttpStatus.OK);
-			}
-
-		} catch (Exception e) {
-			e.printStackTrace();
-			logger.info(e.getMessage());
-			return new ResponseEntity<String>(e.getMessage(), HttpStatus.NOT_FOUND);
+			return new ResponseEntity<String>(String.valueOf(TimeUnit.MILLISECONDS.toSeconds(TotalTime)),
+					HttpStatus.OK);
+		} else {
+			return new ResponseEntity<String>(String.valueOf(555555), HttpStatus.OK);
 		}
-		
-		
-		return new ResponseEntity<String>(String.valueOf(TimeUnit.MILLISECONDS.toSeconds(TotalTime)), HttpStatus.OK);
-		 }else{
-		return new ResponseEntity<String>(String.valueOf(555555), HttpStatus.OK);
-		 }
 	}
 
 	@RequestMapping(value = "/getallrecord", method = RequestMethod.GET)
@@ -207,11 +201,11 @@ public class FileUploadController<E extends Serializable> {
 			valid.addAll(invalid);
 
 			Deal_DTO dto = null;
-			for (Map map : valid) {
+			for (Map<?, ?> map : valid) {
 				dto = new Deal_DTO();
 
 				String fileName = checkMap.get(map.get("file_id"));
-				dto.setFileName(fileName);
+				dto.setFileName(fileName != null ? fileName : "");
 				dto.setDeal_id(map.get("deal_id").toString());
 				dto.setFrom_currency_iso_code(map.get("from_currency_iso_code").toString());
 				dto.setTo_currency_iso_code(map.get("from_currency_iso_code").toString());

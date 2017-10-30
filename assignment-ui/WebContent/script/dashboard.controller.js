@@ -32,9 +32,9 @@ todoApp.controller('dashBoardController', function($scope, $rootScope, $http,
 			if(data=="555555"){
 				$scope.message="File already Exist ";
 			}
-			else if(data="666666"){
+			/*else if(data="666666"){
 				$scope.message="Please enter valid file";
-			}
+			}*/
 			else{
 			$scope.message="Record Saved Successfully in "+ data +" second";
 			$scope.totalTime=data;
